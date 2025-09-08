@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор срока годности</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Animation for result */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        /* Animation for standard notification */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .slide-in {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+
+        /* Стили для элементов в выпадающем списке */
+        .product-code {
+            background-color: #dbeafe;
+            color: #1e40af;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .shelf-life {
+            background-color: #dcfce7;
+            color: #166534;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <!-- Header -->
+        <div class="bg-blue-600 text-white p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold">
+                        <i class="fas fa-calculator mr-2"></i> Калькулятор срока годности
+                    </h1>
+                    <p class="text-blue-100 mt-1">
+                        Рассчитайте дату окончания срока годности продукции
+                    </p>
+                </div>
+                <div class="hidden md:block">
+                    <i class="fas fa-clock text-4xl opacity-20"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="p-6">
+            <!-- Data loading status -->
+            <div id="dataStatus" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div class="flex items-center">
+                    <div class="loading-spinner"></div>
+                    <p class="text-blue-700">Загрузка данных о продуктах...</p>
+                </div>
+            </div>
+
+            <!-- Product search with notification area -->
+            <div class="mb-6 flex items-start gap-4">
+                <div class="flex-grow relative">
+                    <label for="productSearch" class="block text-gray-700 font-medium mb-2">
+                        <i class="fas fa-search mr-2 text-blue-500"></i> Поиск продукта
+                    </label>
+                    <div class="relative">
+                        <input
+                           type="text"
+                           id="productSearch"
+                           placeholder="Введите код или название продукта..."
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                           aria-label="Поиск продукта по коду или названию"
+                           disabled
+                        >
+                        <div id="searchResults" class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden" role="listbox">
+                            <!-- Search results will appear here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Standard notification container (now placed next to search) -->
+                <div id="standardNotificationContainer" class="mt-8 w-64"></div>
+            </div>
+
+            <!-- Product info -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label for="productCode" class="block text-gray-700 font-medium mb-2">
+                        <i class="fas fa-barcode mr-2 text-blue-500"></i> Код продукции
+                    </label>
+                    <input
+                       type="text"
+                       id="productCode"
+                       readonly
+                       class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed"
+                       aria-readonly="true"
+                    >
+                </div>
+
+                <div>
+                    <label for="productName" class="block text-gray-700 font-medium mb-2">
+                        <i class="fas fa-tag mr-2 text-blue-500"></i> Наименование
+                    </label>
+                    <input
+                       type="text"
+                       id="productName"
+                       readonly
+                       class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed"
+                       aria-readonly="true"
+                    >
+                </div>
+
+                <div>
+                    <label for="shelfLife" class="block text-gray-700 font-medium mb-2">
+                        <i class="fas fa-calendar-day mr-2 text-blue-500"></i> Срок годности (дней)
+                    </label>
+                    <div class="relative">
+                        <input
+                           type="text"
+                           id="shelfLife"
+                           readonly
+                           class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed"
+                           aria-readonly="true"
+                        >
+                        <span class="absolute right-3 top-3 text-gray-500">дней</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="quantityPerPack" class="block text-gray-700 font-medium mb-2">
+                        <i class="fas fa-boxes mr-2 text-blue-500"></i> Штук в упаковке
+                    </label>
+                    <input
+                       type="number"
+                       id="quantityPerPack"
+                       min="1"
+                       readonly
+                       class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed"
+                       aria-readonly="true"
+                    >
+                </div>
+
+                <div>
+                    <label for="groupBarcode" class="block text-gray-700 font-medium mb-2">
+                        <i class="fas fa-qrcode mr-2 text-blue-500"></i> Штрихкод упаковки
+                    </label>
+                    <input
+                       type="text"
+                       id="groupBarcode"
+                       readonly
+                       class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed"
+                       aria-readonly="true"
+                    >
+                </div>
+
+                <div>
+                    <label for="manufacturerBarcode" class="block text-gray-700 font-medium mb-2">
+                        <i class="fas fa-industry mr-2 text-blue-500"></i> Производитель
+                    </label>
+                    <input
+                       type="text"
+                       id="manufacturerBarcode"
+                       readonly
+                       class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed"
+                       aria-readonly="true"
+                    >
+                </div>
+            </div>
+
+            <!-- Production date -->
+            <div class="mb-6">
+                <label for="productionDate" class="block text-gray-700 font-medium mb-2">
+                    <i class="fas fa-calendar-alt mr-2 text-blue-500"></i> Дата производства
+                </label>
+                <input
+                   type="date"
+                   id="productionDate"
+                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                   aria-label="Укажите дату производства"
+                >
+            </div>
+
+            <!-- Calculate button -->
+            <button
+               onclick="calculateExpiry()"
+               class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-4 rounded-lg transition-all duration-300 transform hover:scale-[1.01] shadow-md"
+               aria-label="Рассчитать срок годности"
+               id="calculateButton"
+               disabled
+            >
+                <i class="fas fa-calculator mr-2"></i> Рассчитать срок годности
+            </button>
+
+            <!-- Result -->
+            <div id="result" class="mt-6 p-5 bg-blue-50 border border-blue-200 rounded-lg hidden fade-in" aria-live="polite">
+                <div class="flex items-center">
+                    <div class="bg-blue-100 p-3 rounded-lg mr-4">
+                        <i class="fas fa-calendar-check text-blue-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-700">
+                            Дата окончания срока годности:
+                        </p>
+                        <p class="text-xl font-bold text-blue-800" id="expiryDate"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-gray-50 px-6 py-4 text-center text-gray-500 text-sm">
+            <p>
+                © 2025 Калькулятор срока годности | Версия 2.3 (made in Quality service)
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // URL к JSON-файлу в репозитории
+    const JSON_URL = 'https://raw.githubusercontent.com/svidovichss-droid/ProgressSAP.github.io/main/data.json';
+    
+    // Глобальные переменные
+    let products = {};
+    let warningMessageAdded = false;
+
+    // DOM elements
+    const productSearch = document.getElementById('productSearch');
+    const searchResults = document.getElementById('searchResults');
+    const standardNotificationContainer = document.getElementById('standardNotificationContainer');
+    const dataStatus = document.getElementById('dataStatus');
+    const calculateButton = document.getElementById('calculateButton');
+
+    // Загрузка данных из JSON-файла
+    async function loadProductsData() {
+        try {
+            const response = await fetch(JSON_URL);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const productsData = await response.json();
+            
+            // Преобразуем массив в объект для быстрого поиска по коду
+            productsData.forEach(product => {
+                products[product["Код продукции"]] = {
+                    "Полное наименование (русское)": product["Полное наименование (русское)"],
+                    "Срок годности": product["Срок годности"],
+                    "Штук в упаковке": product["Штук в упаковке"],
+                    "Штрихкод упаковки": product["Штрихкод упаковки"],
+                    "Производитель": product["Производитель"],
+                    "Название стандарта": product["Название стандарта"]
+                };
+            });
+            
+            // Обновляем статус загрузки
+            dataStatus.innerHTML = `
+                <div class="flex items-center text-green-700">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <p>Данные успешно загружены. Доступно ${Object.keys(products).length} продуктов.</p>
+                </div>
+            `;
+            
+            // Активируем поля ввода
+            productSearch.disabled = false;
+            calculateButton.disabled = false;
+            
+        } catch (error) {
+            console.error('Ошибка загрузки данных:', error);
+            
+            // Обновляем статус загрузки с ошибкой
+            dataStatus.innerHTML = `
+                <div class="flex items-center text-red-700">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    <p>Ошибка загрузки данных: ${error.message}. Используются демонстрационные данные.</p>
+                </div>
+            `;
+            
+            // Используем демонстрационные данные
+            loadDemoData();
+            
+            // Активируем поля ввода
+            productSearch.disabled = false;
+            calculateButton.disabled = false;
+        }
+    }
+
+    // Загрузка демонстрационных данных
+    function loadDemoData() {
+        const demoData = [
+            {
+                "Код продукции": "99999999",
+                "Полное наименование (русское)": "ФрутоНяня X г Продукт XXX",
+                "Срок годности": 19,
+                "Штук в упаковке": 12,
+                "Штрихкод упаковки": "1234567890123",
+                "Производитель": "4567890123456",
+                "Название стандарта": "ПРИМЕР"
+            }
+        ];
+        
+        // Преобразуем массив в объект для быстрого поиска по коду
+        demoData.forEach(product => {
+            products[product["Код продукции"]] = {
+                "Полное наименование (русское)": product["Полное наименование (русское)"],
+                "Срок годности": product["Срок годности"],
+                "Штук в упаковке": product["Штук в упаковке"],
+                "Штрихкод упаковки": product["Штрихкод упаковки"],
+                "Производитель": product["Производитель"],
+                "Название стандарта": product["Название стандарта"]
+            };
+        });
+    }
+
+    // Search functionality
+    productSearch.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        searchResults.innerHTML = '';
+        standardNotificationContainer.innerHTML = ''; // Очищаем уведомление при новом поиске
+        
+        if (searchTerm.length < 2) {
+            searchResults.classList.add('hidden');
+            clearFields();
+            return;
+        }
+
+        let resultsFound = false;
+
+        for (const code in products) {
+            const product = products[code];
+            if (code.includes(searchTerm) ||
+                product["Полное наименование (русское)"].toLowerCase().includes(searchTerm)) {
+
+                const div = document.createElement('div');
+                div.className = 'p-3 hover:bg-blue-50 cursor-pointer flex items-center border-b border-gray-100 last:border-0';
+                div.setAttribute('role', 'option');
+                div.innerHTML = `
+                <div class="bg-blue-100 p-2 rounded-lg mr-3">
+                  <i class="fas fa-box text-blue-600"></i>
+                </div>
+                <div>
+                  <div class="font-medium text-blue-800">${product["Полное наименование (русское)"]}</div>
+                  <div class="text-sm text-gray-500">Код: <span class="product-code">${code}</span> | Срок: <span class="shelf-life">${product["Срок годности"]} дней</span></div>
+                </div>
+                `;
+                div.onclick = function() {
+                    selectProduct(code);
+                };
+                searchResults.appendChild(div);
+                resultsFound = true;
+            }
+        }
+
+        if (resultsFound) {
+            searchResults.classList.remove('hidden');
+        } else {
+            const noResults = document.createElement('div');
+            noResults.className = 'p-3 text-gray-500 text-center';
+            noResults.textContent = 'Ничего не найдено';
+            noResults.setAttribute('role', 'option');
+            searchResults.appendChild(noResults);
+            searchResults.classList.remove('hidden');
+        }
+    });
+
+    // Clear input fields
+    function clearFields() {
+        document.getElementById('productCode').value = '';
+        document.getElementById('productName').value = '';
+        document.getElementById('shelfLife').value = '';
+        document.getElementById('quantityPerPack').value = '';
+        document.getElementById('groupBarcode').value = '';
+        document.getElementById('manufacturerBarcode').value = '';
+        
+        // Remove warning message if exists
+        const warningMsg = document.getElementById('warningMessage');
+        if (warningMsg) {
+            warningMsg.remove();
+            warningMessageAdded = false;
+        }
+    }
+
+    // Close search results when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!productSearch.contains(e.target) && !searchResults.contains(e.target)) {
+            searchResults.classList.add('hidden');
+        }
+    });
+
+    // Select product from search results
+    function selectProduct(code) {
+        const product = products[code];
+        document.getElementById('productCode').value = code;
+        document.getElementById('productName').value = product["Полное наименование (русское)"];
+        document.getElementById('shelfLife').value = product["Срок годности"];
+
+        // Auto-fill other fields
+        document.getElementById('quantityPerPack').value = product["Штук в упаковке"] || "";
+        document.getElementById('groupBarcode').value = product["Штрихкод упаковки"] || "";
+        document.getElementById('manufacturerBarcode').value = product["Производитель"] || "";
+
+        productSearch.value = '';
+        searchResults.classList.add('hidden');
+
+        // Show standard notification if exists
+        if (product["Название стандарта"]) {
+            showStandardNotification("Статус: " + product["Название стандарта"]);
+        }
+        
+        // Add warning message only if not already added
+        if (!warningMessageAdded) {
+            const warningMessage = document.createElement('div');
+            warningMessage.id = 'warningMessage';
+            warningMessage.className = 'mt-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700';
+            warningMessage.textContent = 'Важно! Для завершения процесса нажмите кнопку "Рассчитать срок годности".';
+            
+            // Insert warning before the calculate button
+            const calculateButton = document.querySelector('button[onclick="calculateExpiry()"]');
+            calculateButton.parentNode.insertBefore(warningMessage, calculateButton);
+            
+            warningMessageAdded = true;
+        }
+    }
+
+    // Show standard notification (без крестика закрытия)
+    function showStandardNotification(standard) {
+        // Clear previous notification
+        standardNotificationContainer.innerHTML = '';
+        
+        if (!standard || standard === 'Не указано') return;
+        
+        const notification = document.createElement('div');
+        notification.className = 'p-3 rounded-lg shadow-md bg-blue-100 border border-blue-300 text-blue-800 slide-in';
+        notification.setAttribute('aria-live', 'polite');
+        notification.innerHTML = `
+            <div class="flex items-start">
+                <div class="flex-grow break-words">${standard}</div>
+            </div>
+        `;
+        standardNotificationContainer.appendChild(notification);
+    }
+
+    // Calculate expiry date
+    function calculateExpiry() {
+        const shelfLife = parseInt(document.getElementById('shelfLife').value);
+        const productionDate = document.getElementById('productionDate').value;
+
+        if (!shelfLife || !productionDate) {
+            showNotification('Пожалуйста, выберите продукт и укажите дату производства', 'error');
+            return;
+        }
+
+        const production = new Date(productionDate);
+        const expiryDate = new Date(production);
+        expiryDate.setDate(production.getDate() + shelfLife);
+
+        // Format date as numeric month
+        const options = { year: 'numeric', month: 'numeric', day: 'numeric' };
+        const formattedDate = expiryDate.toLocaleDateString('ru-RU', options);
+
+        document.getElementById('expiryDate').textContent = formattedDate;
+
+        // Show result with animation
+        const resultDiv = document.getElementById('result');
+        resultDiv.classList.remove('hidden');
+        resultDiv.classList.add('fade-in');
+
+        // Remove warning message if exists
+        const warningMsg = document.getElementById('warningMessage');
+        if (warningMsg) {
+            warningMsg.remove();
+            warningMessageAdded = false;
+        }
+
+        // Scroll to result
+        setTimeout(() => {
+            resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
+    }
+
+    // Show notification
+    function showNotification(message, type) {
+        // Remove any existing notifications first
+        const existingNotifications = document.querySelectorAll('.notification-message');
+        existingNotifications.forEach(notification => notification.remove());
+
+        const notification = document.createElement('div');
+        notification.className = `notification-message fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white font-medium z-50 transition-all duration-300 transform translate-x-0 opacity-100 ${
+            type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        }`;
+        notification.setAttribute('aria-live', 'assertive');
+        notification.innerHTML = `
+        <div class="flex items-center">
+          <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} mr-2"></i>
+          ${message}
+        </div>
+        `;
+        document.body.appendChild(notification);
+
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+            notification.classList.add('translate-x-full', 'opacity-0');
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    // Set today's date on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        const today = new Date();
+        const day = String(today.getDate()).padStart(2, '0');
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const year = today.getFullYear();
+
+        document.getElementById('productionDate').value = `${year}-${month}-${day}`;
+        
+        // Загружаем данные о продуктах
+        loadProductsData();
+    });
+</script>
+</body>
+</html>
