@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -86,6 +87,28 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Стили для логотипа */
+        .progress-logo {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            line-height: 1.1;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .progress-text {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        .progress-subtext {
+            font-size: 12px;
+            font-weight: 500;
+            opacity: 0.9;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -103,7 +126,10 @@
                     </p>
                 </div>
                 <div class="hidden md:block">
-                    <i class="fas fa-clock text-4xl opacity-20"></i>
+                    <div class="progress-logo">
+                        <div class="progress-text">ПРОГРЕСС</div>
+                        <div class="progress-subtext">Акционерное Общество</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -111,7 +137,7 @@
         <!-- Main content -->
         <div class="p-6">
             <!-- Data loading status -->
-            <div id="dataStatus" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div id="dataStatus" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg hidden">
                 <div class="flex items-center">
                     <div class="loading-spinner"></div>
                     <p class="text-blue-700">Загрузка данных о продуктах...</p>
@@ -271,7 +297,7 @@
         <!-- Footer -->
         <div class="bg-gray-50 px-6 py-4 text-center text-gray-500 text-sm">
             <p>
-                © 2025 Калькулятор срока годности | Версия 2.3 (made in Quality service)
+                © 2025 Калькулятор срока годности | Версия 2.3 <i class="fas fa-heart text-red-500 mx-1"></i> <i class="fas fa-code-branch text-blue-500 mx-1"></i> (made in Quality service)
             </p>
         </div>
     </div>
@@ -295,6 +321,9 @@
     // Загрузка данных из JSON-файла
     async function loadProductsData() {
         try {
+            // Показываем индикатор загрузки
+            dataStatus.classList.remove('hidden');
+            
             const response = await fetch(JSON_URL);
             
             if (!response.ok) {
@@ -315,13 +344,8 @@
                 };
             });
             
-            // Обновляем статус загрузки
-            dataStatus.innerHTML = `
-                <div class="flex items-center text-green-700">
-                    <i class="fas fa-check-circle mr-2"></i>
-                    <p>Данные успешно загружены. Доступно ${Object.keys(products).length} продуктов.</p>
-                </div>
-            `;
+            // Скрываем индикатор загрузки
+            dataStatus.classList.add('hidden');
             
             // Активируем поля ввода
             productSearch.disabled = false;
@@ -330,13 +354,8 @@
         } catch (error) {
             console.error('Ошибка загрузки данных:', error);
             
-            // Обновляем статус загрузки с ошибкой
-            dataStatus.innerHTML = `
-                <div class="flex items-center text-red-700">
-                    <i class="fas fa-exclamation-circle mr-2"></i>
-                    <p>Ошибка загрузки данных: ${error.message}. Используются демонстрационные данные.</p>
-                </div>
-            `;
+            // Скрываем индикатор загрузки
+            dataStatus.classList.add('hidden');
             
             // Используем демонстрационные данные
             loadDemoData();
