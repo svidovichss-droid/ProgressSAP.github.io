@@ -17,6 +17,39 @@ const standardNotificationContainer = document.getElementById('standardNotificat
 const dataStatus = document.getElementById('dataStatus');
 const calculateButton = document.getElementById('calculateButton');
 
+// Функции для воспроизведения системных звуков
+function playSuccessSound() {
+    const sound = document.getElementById('soundSuccess');
+    if (sound) {
+        sound.currentTime = 0;
+        sound.play().catch(e => console.log("Автовоспроизведение звука заблокировано: ", e));
+    }
+}
+
+function playErrorSound() {
+    const sound = document.getElementById('soundError');
+    if (sound) {
+        sound.currentTime = 0;
+        sound.play().catch(e => console.log("Автовоспроизведение звука заблокировано: ", e));
+    }
+}
+
+function playNotifySound() {
+    const sound = document.getElementById('soundNotify');
+    if (sound) {
+        sound.currentTime = 0;
+        sound.play().catch(e => console.log("Автовоспроизведение звука заблокировано: ", e));
+    }
+}
+
+function playCalculateSound() {
+    const sound = document.getElementById('soundCalculate');
+    if (sound) {
+        sound.currentTime = 0;
+        sound.play().catch(e => console.log("Автовоспроизведение звука заблокировано: ", e));
+    }
+}
+
 // Утилиты для работы с кэшем
 const cacheUtils = {
     // Сохранить данные в кэш
@@ -173,6 +206,7 @@ async function loadProductsData() {
             // Показываем уведомление об успешной загрузке
             if (cached) {
                 showNotification('Данные успешно обновлены', 'success');
+                playSuccessSound();
             }
         }
 
@@ -185,10 +219,12 @@ async function loadProductsData() {
             console.log('Используем данные из кэша из-за ошибки сети');
             processProductsData(cached.data);
             showNotification('Не удалось загрузить актуальные данные. Используются кэшированные данные.', 'error');
+            playErrorSound();
         } else {
             // Нет кэша и не удалось загрузить данные
             console.log('Нет данных для работы');
             showNotification('Не удалось загрузить данные. Пожалуйста, проверьте подключение к интернету.', 'error');
+            playErrorSound();
             dataStatus.classList.add('hidden');
         }
     } finally {
@@ -352,6 +388,9 @@ function selectProduct(code) {
             warningMessageAdded = true;
         }
     }
+    
+    // Воспроизводим звук уведомления при выборе продукта
+    playNotifySound();
 }
 
 // Показать стандартное уведомление
@@ -387,8 +426,12 @@ function calculateExpiry() {
 
     if (!shelfLife || !productionDate) {
         showNotification('Пожалуйста, выберите продукт и укажите дату производства', 'error');
+        playErrorSound();
         return;
     }
+
+    // Воспроизводим звук расчета
+    playCalculateSound();
 
     const production = new Date(productionDate);
     const expiryDate = new Date(production);
@@ -407,6 +450,11 @@ function calculateExpiry() {
         warningMsg.remove();
         warningMessageAdded = false;
     }
+
+    // Воспроизводим звук успеха после небольшой задержки
+    setTimeout(() => {
+        playSuccessSound();
+    }, 300);
 
     setTimeout(() => {
         resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -430,6 +478,13 @@ function showNotification(message, type) {
     </div>
     `;
     document.body.appendChild(notification);
+
+    // Воспроизводим соответствующий звук для уведомления
+    if (type === 'success') {
+        playSuccessSound();
+    } else {
+        playErrorSound();
+    }
 
     setTimeout(() => {
         notification.classList.add('translate-x-full', 'opacity-0');
