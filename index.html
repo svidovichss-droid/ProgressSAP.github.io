@@ -10,6 +10,20 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<!-- Аудио элементы для системных звуков Windows (скрыты) -->
+<audio id="soundSuccess" preload="auto">
+    <source src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3" type="audio/mpeg">
+</audio>
+<audio id="soundError" preload="auto">
+    <source src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3" type="audio/mpeg">
+</audio>
+<audio id="soundNotify" preload="auto">
+    <source src="https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3" type="audio/mpeg">
+</audio>
+<audio id="soundCalculate" preload="auto">
+    <source src="https://assets.mixkit.co/sfx/preview/mixkit-retro-game-emergency-alarm-1000.mp3" type="audio/mpeg">
+</audio>
+
 <div class="header">
     <div class="container">
         <div class="header-content flex items-center justify-between">
@@ -210,5 +224,31 @@
 </div>
 
 <script src="script.js"></script>
+<script>
+    // Функции для воспроизведения системных звуков
+    function playSuccessSound() {
+        const sound = document.getElementById('soundSuccess');
+        sound.currentTime = 0;
+        sound.play().catch(e => console.log("Автовоспроизведение звука заблокировано: ", e));
+    }
+    
+    function playErrorSound() {
+        const sound = document.getElementById('soundError');
+        sound.currentTime = 0;
+        sound.play().catch(e => console.log("Автовоспроизведение звука заблокировано: ", e));
+    }
+    
+    function playNotifySound() {
+        const sound = document.getElementById('soundNotify');
+        sound.currentTime = 0;
+        sound.play().catch(e => console.log("Автовоспроизведение звука заблокировано: ", e));
+    }
+    
+    function playCalculateSound() {
+        const sound = document.getElementById('soundCalculate');
+        sound.currentTime = 0;
+        sound.play().catch(e => console.log("Автовоспроизведение звука заблокировано: ", e));
+    }
+</script>
 </body>
 </html>
