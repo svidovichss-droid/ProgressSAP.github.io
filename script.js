@@ -9,7 +9,7 @@ const CONFIG = {
 // Глобальные переменные
 let products = {};
 let warningMessageAdded = false;
-let soundsLoaded = false;
+let audioContext = null;
 
 // DOM elements
 const productSearch = document.getElementById('productSearch');
@@ -18,124 +18,205 @@ const standardNotificationContainer = document.getElementById('standardNotificat
 const dataStatus = document.getElementById('dataStatus');
 const calculateButton = document.getElementById('calculateButton');
 
-// Функция для проверки загрузки звуков
-function checkSoundsLoaded() {
-    const sounds = [
-        document.getElementById('soundSuccess'),
-        document.getElementById('soundError'),
-        document.getElementById('soundNotify'),
-        document.getElementById('soundCalculate')
-    ];
-    
-    soundsLoaded = sounds.every(sound => sound && sound.readyState >= 2);
-    
-    if (!soundsLoaded) {
-        console.log('Звуки еще не загружены, повторная проверка через 500ms');
-        setTimeout(checkSoundsLoaded, 500);
-    } else {
-        console.log('Все звуки загружены');
+// Инициализация AudioContext
+function initAudio() {
+    try {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    } catch (error) {
+        console.error('Ошибка инициализации AudioContext:', error);
     }
 }
 
-// Функции для воспроизведения системных звуков Windows 10/11
+// Функции для воспроизведения системных звуков
 function playSuccessSound() {
     try {
         const sound = document.getElementById('soundSuccess');
-        if (sound && soundsLoaded) {
+        if (sound) {
+            // Разблокируем аудио контекст при первом взаимодействии
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
             sound.currentTime = 0;
             const playPromise = sound.play();
+            
             if (playPromise !== undefined) {
-                playPromise.catch(e => {
-                    console.log("Автовоспроизведение soundSuccess заблокировано: ", e);
-                    // Пытаемся воспроизвести при взаимодействии пользователя
-                    document.addEventListener('click', function tryPlayOnce() {
+                playPromise.catch(error => {
+                    console.log('Ошибка воспроизведения успеха:', error);
+                    // Пытаемся воспроизвести при клике пользователя
+                    const tryPlay = () => {
                         sound.play().catch(() => {});
-                        document.removeEventListener('click', tryPlayOnce);
-                    });
+                        document.removeEventListener('click', tryPlay);
+                    };
+                    document.addEventListener('click', tryPlay);
                 });
             }
         }
     } catch (error) {
-        console.error('Ошибка воспроизведения success sound:', error);
+        console.error('Ошибка в playSuccessSound:', error);
     }
 }
 
 function playErrorSound() {
     try {
         const sound = document.getElementById('soundError');
-        if (sound && soundsLoaded) {
+        if (sound) {
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
             sound.currentTime = 0;
             const playPromise = sound.play();
+            
             if (playPromise !== undefined) {
-                playPromise.catch(e => {
-                    console.log("Автовоспроизведение soundError заблокировано: ", e);
-                    document.addEventListener('click', function tryPlayOnce() {
+                playPromise.catch(error => {
+                    console.log('Ошибка воспроизведения ошибки:', error);
+                    const tryPlay = () => {
                         sound.play().catch(() => {});
-                        document.removeEventListener('click', tryPlayOnce);
-                    });
+                        document.removeEventListener('click', tryPlay);
+                    };
+                    document.addEventListener('click', tryPlay);
                 });
             }
         }
     } catch (error) {
-        console.error('Ошибка воспроизведения error sound:', error);
+        console.error('Ошибка в playErrorSound:', error);
     }
 }
 
 function playNotifySound() {
     try {
         const sound = document.getElementById('soundNotify');
-        if (sound && soundsLoaded) {
+        if (sound) {
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
             sound.currentTime = 0;
             const playPromise = sound.play();
+            
             if (playPromise !== undefined) {
-                playPromise.catch(e => {
-                    console.log("Автовоспроизведение soundNotify заблокировано: ", e);
-                    document.addEventListener('click', function tryPlayOnce() {
+                playPromise.catch(error => {
+                    console.log('Ошибка воспроизведения уведомления:', error);
+                    const tryPlay = () => {
                         sound.play().catch(() => {});
-                        document.removeEventListener('click', tryPlayOnce);
-                    });
+                        document.removeEventListener('click', tryPlay);
+                    };
+                    document.addEventListener('click', tryPlay);
                 });
             }
         }
     } catch (error) {
-        console.error('Ошибка воспроизведения notify sound:', error);
+        console.error('Ошибка в playNotifySound:', error);
     }
 }
 
 function playCalculateSound() {
     try {
         const sound = document.getElementById('soundCalculate');
-        if (sound && soundsLoaded) {
+        if (sound) {
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
             sound.currentTime = 0;
             const playPromise = sound.play();
+            
             if (playPromise !== undefined) {
-                playPromise.catch(e => {
-                    console.log("Автовоспроизведение soundCalculate заблокировано: ", e);
-                    document.addEventListener('click', function tryPlayOnce() {
+                playPromise.catch(error => {
+                    console.log('Ошибка воспроизведения расчета:', error);
+                    const tryPlay = () => {
                         sound.play().catch(() => {});
-                        document.removeEventListener('click', tryPlayOnce);
-                    });
+                        document.removeEventListener('click', tryPlay);
+                    };
+                    document.addEventListener('click', tryPlay);
                 });
             }
         }
     } catch (error) {
-        console.error('Ошибка воспроизведения calculate sound:', error);
+        console.error('Ошибка в playCalculateSound:', error);
     }
 }
 
-// Альтернативные звуки на случай проблем с основными
+// Альтернативные звуки (более надежные)
 const fallbackSounds = {
-    success: 'https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3',
-    error: 'https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3',
-    notify: 'https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3',
-    calculate: 'https://assets.mixkit.co/sfx/preview/mixkit-retro-game-emergency-alarm-1000.mp3'
+    success: () => {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(ctx.destination);
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 880;
+            gainNode.gain.value = 0.1;
+            
+            oscillator.start();
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.5);
+            
+            setTimeout(() => oscillator.stop(), 500);
+        } catch (error) {
+            console.error('Ошибка fallback success sound:', error);
+        }
+    },
+    
+    error: () => {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(ctx.destination);
+            
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.value = 220;
+            gainNode.gain.value = 0.1;
+            
+            oscillator.start();
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.8);
+            
+            setTimeout(() => oscillator.stop(), 800);
+        } catch (error) {
+            console.error('Ошибка fallback error sound:', error);
+        }
+    }
 };
 
-// Функция для создания резервного аудио элемента
-function createFallbackAudio(type) {
-    const audio = new Audio(fallbackSounds[type]);
-    audio.preload = 'auto';
-    return audio;
+// Улучшенная функция воспроизведения с fallback
+function playSound(type) {
+    try {
+        switch(type) {
+            case 'success':
+                playSuccessSound();
+                break;
+            case 'error':
+                playErrorSound();
+                break;
+            case 'notify':
+                playNotifySound();
+                break;
+            case 'calculate':
+                playCalculateSound();
+                break;
+        }
+        
+        // Fallback через 100ms если основной звук не сработал
+        setTimeout(() => {
+            const soundElement = document.getElementById(`sound${type.charAt(0).toUpperCase() + type.slice(1)}`);
+            if (soundElement && soundElement.currentTime === 0) {
+                if (type === 'success') fallbackSounds.success();
+                if (type === 'error') fallbackSounds.error();
+            }
+        }, 100);
+        
+    } catch (error) {
+        console.error(`Ошибка воспроизведения звука ${type}:`, error);
+    }
 }
 
 // Утилиты для работы с кэшем
@@ -294,7 +375,7 @@ async function loadProductsData() {
             // Показываем уведомление об успешной загрузке
             if (cached) {
                 showNotification('Данные успешно обновлены', 'success');
-                playSuccessSound();
+                playSound('success');
             }
         }
 
@@ -307,12 +388,12 @@ async function loadProductsData() {
             console.log('Используем данные из кэша из-за ошибки сети');
             processProductsData(cached.data);
             showNotification('Не удалось загрузить актуальные данные. Используются кэшированные данные.', 'error');
-            playErrorSound();
+            playSound('error');
         } else {
             // Нет кэша и не удалось загрузить данные
             console.log('Нет данных для работы');
             showNotification('Не удалось загрузить данные. Пожалуйста, проверьте подключение к интернету.', 'error');
-            playErrorSound();
+            playSound('error');
             dataStatus.classList.add('hidden');
         }
     } finally {
@@ -478,7 +559,7 @@ function selectProduct(code) {
     }
     
     // Воспроизводим звук уведомления при выборе продукта
-    playNotifySound();
+    playSound('notify');
 }
 
 // Показать стандартное уведомление
@@ -514,12 +595,12 @@ function calculateExpiry() {
 
     if (!shelfLife || !productionDate) {
         showNotification('Пожалуйста, выберите продукт и укажите дату производства', 'error');
-        playErrorSound();
+        playSound('error');
         return;
     }
 
     // Воспроизводим звук расчета
-    playCalculateSound();
+    playSound('calculate');
 
     const production = new Date(productionDate);
     const expiryDate = new Date(production);
@@ -541,7 +622,7 @@ function calculateExpiry() {
 
     // Воспроизводим звук успеха после небольшой задержки
     setTimeout(() => {
-        playSuccessSound();
+        playSound('success');
     }, 300);
 
     setTimeout(() => {
@@ -569,9 +650,9 @@ function showNotification(message, type) {
 
     // Воспроизводим соответствующий звук для уведомления
     if (type === 'success') {
-        playSuccessSound();
+        playSound('success');
     } else {
-        playErrorSound();
+        playSound('error');
     }
 
     setTimeout(() => {
@@ -592,8 +673,8 @@ document.addEventListener('DOMContentLoaded', () => {
         productionDateElem.value = `${year}-${month}-${day}`;
     }
     
-    // Запускаем проверку загрузки звуков
-    setTimeout(checkSoundsLoaded, 1000);
+    // Инициализируем аудио
+    initAudio();
     
     // Загружаем данные о продуктах
     loadProductsData();
