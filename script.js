@@ -17,7 +17,7 @@ const standardNotificationContainer = document.getElementById('standardNotificat
 const dataStatus = document.getElementById('dataStatus');
 const calculateButton = document.getElementById('calculateButton');
 
-// Функции для воспроизведения системных звуков
+// Функции для воспроизведения системных звуков Windows 10/11
 function playSuccessSound() {
     const sound = document.getElementById('soundSuccess');
     if (sound) {
@@ -117,7 +117,7 @@ const cacheUtils = {
 async function checkForUpdates(cachedEtag) {
     try {
         const response = await fetch(CONFIG.JSON_URL, {
-            method: 'HEAD',
+            method: => 'HEAD',
             headers: cachedEtag ? { 'If-None-Match': cachedEtag } : {}
         });
 
