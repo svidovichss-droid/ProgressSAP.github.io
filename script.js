@@ -9,6 +9,7 @@ const CONFIG = {
 // Глобальные переменные
 let products = {};
 let warningMessageAdded = false;
+let soundsLoaded = false;
 
 // DOM elements
 const productSearch = document.getElementById('productSearch');
@@ -17,37 +18,124 @@ const standardNotificationContainer = document.getElementById('standardNotificat
 const dataStatus = document.getElementById('dataStatus');
 const calculateButton = document.getElementById('calculateButton');
 
+// Функция для проверки загрузки звуков
+function checkSoundsLoaded() {
+    const sounds = [
+        document.getElementById('soundSuccess'),
+        document.getElementById('soundError'),
+        document.getElementById('soundNotify'),
+        document.getElementById('soundCalculate')
+    ];
+    
+    soundsLoaded = sounds.every(sound => sound && sound.readyState >= 2);
+    
+    if (!soundsLoaded) {
+        console.log('Звуки еще не загружены, повторная проверка через 500ms');
+        setTimeout(checkSoundsLoaded, 500);
+    } else {
+        console.log('Все звуки загружены');
+    }
+}
+
 // Функции для воспроизведения системных звуков Windows 10/11
 function playSuccessSound() {
-    const sound = document.getElementById('soundSuccess');
-    if (sound) {
-        sound.currentTime = 0;
-        sound.play().catch(e => console.log("Автовоспроизведение звука заблокировано: ", e));
+    try {
+        const sound = document.getElementById('soundSuccess');
+        if (sound && soundsLoaded) {
+            sound.currentTime = 0;
+            const playPromise = sound.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(e => {
+                    console.log("Автовоспроизведение soundSuccess заблокировано: ", e);
+                    // Пытаемся воспроизвести при взаимодействии пользователя
+                    document.addEventListener('click', function tryPlayOnce() {
+                        sound.play().catch(() => {});
+                        document.removeEventListener('click', tryPlayOnce);
+                    });
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка воспроизведения success sound:', error);
     }
 }
 
 function playErrorSound() {
-    const sound = document.getElementById('soundError');
-    if (sound) {
-        sound.currentTime = 0;
-        sound.play().catch(e => console.log("Автовоспроизведение звука заблокировано: ", e));
+    try {
+        const sound = document.getElementById('soundError');
+        if (sound && soundsLoaded) {
+            sound.currentTime = 0;
+            const playPromise = sound.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(e => {
+                    console.log("Автовоспроизведение soundError заблокировано: ", e);
+                    document.addEventListener('click', function tryPlayOnce() {
+                        sound.play().catch(() => {});
+                        document.removeEventListener('click', tryPlayOnce);
+                    });
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка воспроизведения error sound:', error);
     }
 }
 
 function playNotifySound() {
-    const sound = document.getElementById('soundNotify');
-    if (sound) {
-        sound.currentTime = 0;
-        sound.play().catch(e => console.log("Автовоспроизведение звука заблокировано: ", e));
+    try {
+        const sound = document.getElementById('soundNotify');
+        if (sound && soundsLoaded) {
+            sound.currentTime = 0;
+            const playPromise = sound.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(e => {
+                    console.log("Автовоспроизведение soundNotify заблокировано: ", e);
+                    document.addEventListener('click', function tryPlayOnce() {
+                        sound.play().catch(() => {});
+                        document.removeEventListener('click', tryPlayOnce);
+                    });
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка воспроизведения notify sound:', error);
     }
 }
 
 function playCalculateSound() {
-    const sound = document.getElementById('soundCalculate');
-    if (sound) {
-        sound.currentTime = 0;
-        sound.play().catch(e => console.log("Автовоспроизведение звука заблокировано: ", e));
+    try {
+        const sound = document.getElementById('soundCalculate');
+        if (sound && soundsLoaded) {
+            sound.currentTime = 0;
+            const playPromise = sound.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(e => {
+                    console.log("Автовоспроизведение soundCalculate заблокировано: ", e);
+                    document.addEventListener('click', function tryPlayOnce() {
+                        sound.play().catch(() => {});
+                        document.removeEventListener('click', tryPlayOnce);
+                    });
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка воспроизведения calculate sound:', error);
     }
+}
+
+// Альтернативные звуки на случай проблем с основными
+const fallbackSounds = {
+    success: 'https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3',
+    error: 'https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3',
+    notify: 'https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3',
+    calculate: 'https://assets.mixkit.co/sfx/preview/mixkit-retro-game-emergency-alarm-1000.mp3'
+};
+
+// Функция для создания резервного аудио элемента
+function createFallbackAudio(type) {
+    const audio = new Audio(fallbackSounds[type]);
+    audio.preload = 'auto';
+    return audio;
 }
 
 // Утилиты для работы с кэшем
@@ -211,7 +299,7 @@ async function loadProductsData() {
         }
 
     } catch (error) {
-        console.error('Ошибка загрузка данных:', error);
+        console.error('Ошибка загрузки данных:', error);
         
         // Пытаемся использовать кэш, даже если он просрочен
         const cached = cacheUtils.getFromCache();
@@ -503,6 +591,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         productionDateElem.value = `${year}-${month}-${day}`;
     }
+    
+    // Запускаем проверку загрузки звуков
+    setTimeout(checkSoundsLoaded, 1000);
     
     // Загружаем данные о продуктах
     loadProductsData();
