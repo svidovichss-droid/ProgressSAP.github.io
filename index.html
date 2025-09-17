@@ -10,17 +10,17 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<!-- Аудио элементы для системных звуков Windows 10/11 (скрыты) -->
-<audio id="soundSuccess" preload="auto">
+<!-- Аудио элементы для системных звуков Windows (скрыты) -->
+<audio id="soundSuccess" preload="auto" muted>
     <source src="https://notificationsounds.com/soundfiles/8eefcfdf5990e441f0fb6f3fad709e21/file-sounds-1151-extra-service.mp3" type="audio/mpeg">
 </audio>
-<audio id="soundError" preload="auto">
+<audio id="soundError" preload="auto" muted>
     <source src="https://notificationsounds.com/soundfiles/8e82ab7243b7c66d8f1695a7be6a07df/file-sounds-1148-windows-error.mp3" type="audio/mpeg">
 </audio>
-<audio id="soundNotify" preload="auto">
+<audio id="soundNotify" preload="auto" muted>
     <source src="https://notificationsounds.com/soundfiles/8e82ab7243b7c66d8f1695a7be6a07df/file-sounds-1147-notification.mp3" type="audio/mpeg">
 </audio>
-<audio id="soundCalculate" preload="auto">
+<audio id="soundCalculate" preload="auto" muted>
     <source src="https://notificationsounds.com/soundfiles/8e82ab7243b7c66d8f1695a7be6a07df/file-sounds-1144-windows-calendar.mp3" type="audio/mpeg">
 </audio>
 
@@ -225,30 +225,23 @@
 
 <script src="script.js"></script>
 <script>
-    // Функции для воспроизведения системных звуков
-    function playSuccessSound() {
-        const sound = document.getElementById('soundSuccess');
-        sound.currentTime = 0;
-        sound.play().catch(e => console.log("Автовоспроизведение звука заблокировано: ", e));
-    }
-    
-    function playErrorSound() {
-        const sound = document.getElementById('soundError');
-        sound.currenttime = 0;
-        sound.play().catch(e => console.log("Автовоспроизведение звука заблокировано: ", e));
-    }
-    
-    function playNotifySound() {
-        const sound = document.getElementById('soundNotify');
-        sound.currentTime = 0;
-        sound.play().catch(e => console.log("Автовоспроизведение звука заблокировано: ", e));
-    }
-    
-    function playCalculateSound() {
-        const sound = document.getElementById('soundCalculate');
-        sound.currentTime = 0;
-        sound.play().catch(e => console.log("Автовоспроизведение звука заблокировано: ", e));
-    }
+    // Удаляем старые функции воспроизведения звуков, так как они теперь в script.js
+    // Инициализация звуков при первом взаимодействии пользователя
+    document.addEventListener('click', function initAudioOnInteraction() {
+        // Разблокируем аудио элементы
+        const audioElements = document.querySelectorAll('audio');
+        audioElements.forEach(audio => {
+            audio.muted = false;
+        });
+        
+        // Инициализируем AudioContext если он еще не инициализирован
+        if (typeof initAudio === 'function') {
+            initAudio();
+        }
+        
+        // Удаляем обработчик после первого клика
+        document.removeEventListener('click', initAudioOnInteraction);
+    }, { once: true });
 </script>
 </body>
 </html>
