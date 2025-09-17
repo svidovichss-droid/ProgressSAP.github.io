@@ -117,7 +117,7 @@ const cacheUtils = {
 async function checkForUpdates(cachedEtag) {
     try {
         const response = await fetch(CONFIG.JSON_URL, {
-            method: => 'HEAD',
+            method: 'HEAD',
             headers: cachedEtag ? { 'If-None-Match': cachedEtag } : {}
         });
 
@@ -211,7 +211,7 @@ async function loadProductsData() {
         }
 
     } catch (error) {
-        console.error('Ошибка загрузки данных:', error);
+        console.error('Ошибка загрузка данных:', error);
         
         // Пытаемся использовать кэш, даже если он просрочен
         const cached = cacheUtils.getFromCache();
