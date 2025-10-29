@@ -1,11 +1,11 @@
-const CACHE_NAME = 'progress-calculator-v3.0';
+const CACHE_NAME = 'progress-calculator-v3.1';
 
 /**
  * Service Worker для PWA приложения
  */
 class CalculatorServiceWorker {
   constructor() {
-    this.version = '3.0.0';
+    this.version = '3.1.0';
     this.init();
   }
 
@@ -19,11 +19,39 @@ class CalculatorServiceWorker {
 
   async handleInstall(event) {
     console.log('🔧 Service Worker: Установка');
+    
+    // Предварительное кэширование критических ресурсов
+    event.waitUntil(
+      caches.open(CACHE_NAME).then((cache) => {
+        return cache.addAll([
+          './',
+          './index.html',
+          './data.json',
+          './manifest.json'
+        ]);
+      })
+    );
+    
     event.waitUntil(self.skipWaiting());
   }
 
   async handleActivate(event) {
     console.log('🎯 Service Worker: Активация');
+    
+    // Очистка старых кэшей
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME) {
+              console.log('🗑️ Удаление старого кэша:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      })
+    );
+    
     event.waitUntil(self.clients.claim());
   }
 
@@ -44,12 +72,20 @@ class CalculatorServiceWorker {
   }
 
   async handleDataRequest(request) {
+    const cache = await caches.open(CACHE_NAME);
+    
     try {
-      // Пробуем сеть first
-      const networkResponse = await fetch(request);
+      // Пробуем сеть first с CORS
+      const networkResponse = await fetch(request, {
+        mode: 'cors',
+        cache: 'no-cache'
+      });
       
       if (networkResponse.ok) {
         console.log('✅ Service Worker: Данные из сети');
+        
+        // Кэшируем свежий ответ
+        await cache.put(request, networkResponse.clone());
         return networkResponse;
       }
       throw new Error('Network response not ok');
@@ -57,7 +93,6 @@ class CalculatorServiceWorker {
       console.log('❌ Service Worker: Ошибка сети, пробуем кэш');
       
       // Пробуем кэш
-      const cache = await caches.open(CACHE_NAME);
       const cachedResponse = await cache.match(request);
       
       if (cachedResponse) {
@@ -68,7 +103,10 @@ class CalculatorServiceWorker {
       // Fallback
       console.log('🆘 Service Worker: Используем fallback данные');
       return new Response(JSON.stringify(this.getFallbackData()), {
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
       });
     }
   }
@@ -97,12 +135,30 @@ class CalculatorServiceWorker {
     return [
       {
         "Код продукции": "000001",
-        "Полное наименование (русское)": "Тестовый продукт 1 (fallback)",
-        "Срок годности": 365,
-        "Штук в упаковке": 10,
-        "Штрихкод упаковки": "1234567890123",
-        "Производитель": "Тестовый производитель",
-        "Название стандарта": "ГОСТ 12345-2020"
+        "Полное наименование (русское)": "Молоко пастеризованное 3,2% (fallback)",
+        "Срок годности": 5,
+        "Штук в упаковке": 20,
+        "Штрихкод упаковки": "4601234567890",
+        "Производитель": "Молочный комбинат №1",
+        "Название стандарта": "ГОСТ 31450-2020"
+      },
+      {
+        "Код продукции": "000002",
+        "Полное наименование (русское)": "Йогурт натуральный 2,5% (fallback)",
+        "Срок годности": 14,
+        "Штук в упаковке": 12,
+        "Штрихкод упаковки": "4601234567891",
+        "Производитель": "Молочный комбинат №1",
+        "Название стандарта": "ТУ 10.51.10-001-123456-2021"
+      },
+      {
+        "Код продукции": "000003",
+        "Полное наименование (русское)": "Сыр Российский 50% (fallback)",
+        "Срок годности": 30,
+        "Штук в упаковке": 8,
+        "Штрихкод упаковки": "4601234567892",
+        "Производитель": "Сыродельный завод 'Волга'",
+        "Название стандарта": "ГОСТ 32260-2013"
       }
     ];
   }
