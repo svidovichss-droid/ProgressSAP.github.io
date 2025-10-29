@@ -5,7 +5,7 @@ export const CONFIG = {
   VERSION: '3.1.0',
   
   // Основной источник данных (будет переопределен в ProductService)
-  JSON_URL: './data.json',
+  JSON_URL: 'https://raw.githubusercontent.com/svidovichss-droid/ProgressSAP.github.io/refs/heads/main/data.json',
   
   // Настройки кэша
   CACHE_DURATION: 24 * 60 * 60 * 1000, // 24 часа
