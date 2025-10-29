@@ -36,14 +36,14 @@ class App {
     console.group('🚀 Инициализация приложения');
     
     try {
-      // Инициализация Service Worker
-      await registerServiceWorker();
-      
       // Настройка темы
       setupThemeToggle();
       
       // Инициализация компонентов
       this.initComponents();
+      
+      // Инициализация Service Worker (после компонентов)
+      await registerServiceWorker();
       
       // Загрузка данных
       await this.loadProductsData();
@@ -83,24 +83,23 @@ class App {
       onStandardNotification: this.handleStandardNotification.bind(this)
     });
     
-    // Вставка компонентов в DOM
-    const searchContainer = document.getElementById('productSearch');
-    if (searchContainer && searchContainer.parentNode) {
-      searchContainer.parentNode.replaceChild(
-        this.components.search.getElement(), 
-        searchContainer
-      );
-    }
-    
-    const calculatorContainer = document.querySelector('.product-fields-grid');
-    if (calculatorContainer && calculatorContainer.parentNode) {
-      calculatorContainer.parentNode.replaceChild(
-        this.components.calculator.getElement(),
-        calculatorContainer
-      );
-    }
+    // Вставка компонентов в DOM - БЕЗОПАСНАЯ ЗАМЕНА
+    this.safeReplaceComponent('productSearch', this.components.search.getElement());
+    this.safeReplaceComponent('calculatorFields', this.components.calculator.getElement());
     
     console.log('✅ Компоненты инициализированы');
+  }
+
+  /**
+   * Безопасная замена компонентов
+   */
+  safeReplaceComponent(existingId, newElement) {
+    const existingElement = document.getElementById(existingId);
+    if (existingElement && existingElement.parentNode) {
+      existingElement.parentNode.replaceChild(newElement, existingElement);
+    } else {
+      console.warn(`⚠️ Элемент с id "${existingId}" не найден для замены`);
+    }
   }
 
   /**
@@ -113,18 +112,6 @@ class App {
       // Показываем статус загрузки
       this.showLoadingState(true);
       
-      // Тестируем доступность данных перед загрузкой
-      console.log('🧪 Тестирование источников данных...');
-      const testResults = await this.services.productService.testDataAvailability();
-      
-      // Находим рабочий источник
-      const workingSource = testResults.find(result => result.ok);
-      if (workingSource) {
-        console.log(`✅ Рабочий источник: ${workingSource.url}`);
-      } else {
-        console.warn('⚠️ Нет рабочих источников, используется fallback');
-      }
-      
       // Загружаем продукты
       const products = await this.services.productService.loadProducts();
       this.state.products = products;
@@ -133,10 +120,6 @@ class App {
       this.updateProductsCount();
       this.updateLastUpdateInfo();
       this.showLoadingState(false);
-      
-      // Показываем диагностику
-      const diagnostics = this.services.productService.getDiagnostics();
-      console.log('📊 Диагностика:', diagnostics);
       
       // Активируем поиск после загрузки данных
       this.activateSearch();
@@ -175,10 +158,8 @@ class App {
    * Активация поиска после загрузки данных
    */
   activateSearch() {
-    const searchInput = document.querySelector('#productSearch');
-    if (searchInput) {
-      searchInput.disabled = false;
-      searchInput.placeholder = 'Введите код или название продукта...';
+    if (this.components.search) {
+      this.components.search.setEnabled(true);
     }
     
     // Показываем уведомление о готовности
@@ -193,14 +174,9 @@ class App {
    */
   showLoadingState(show) {
     const dataStatus = document.getElementById('dataStatus');
-    const searchInput = document.querySelector('#productSearch');
     
     if (dataStatus) {
       dataStatus.style.display = show ? 'block' : 'none';
-    }
-    
-    if (searchInput) {
-      searchInput.disabled = show;
     }
     
     this.state.isLoading = show;
