@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Диагностика - Калькулятор срока годности</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8">🔧 Диагностика приложения</h1>
+        
+        <div class="grid gap-6">
+            <!-- Статус приложения -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">📊 Статус приложения</h2>
+                <div id="appStatus" class="space-y-2">
+                    <div class="flex justify-between">
+                        <span>URL data.json:</span>
+                        <span id="dataUrl" class="font-mono"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Online статус:</span>
+                        <span id="onlineStatus"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Service Worker:</span>
+                        <span id="swStatus"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Проверка данных -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">📁 Проверка данных</h2>
+                <button onclick="testDataLoad()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    🔍 Проверить загрузку данных
+                </button>
+                <div id="dataTestResult" class="mt-4 hidden">
+                    <pre class="bg-gray-100 p-4 rounded overflow-auto max-h-96"></pre>
+                </div>
+            </div>
+
+            <!-- Кэш -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">💾 Кэш</h2>
+                <div class="space-y-2">
+                    <button onclick="checkCache()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 mr-2">
+                        📋 Проверить кэш
+                    </button>
+                    <button onclick="clearCache()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                        🗑️ Очистить кэш
+                    </button>
+                </div>
+                <div id="cacheInfo" class="mt-4 hidden">
+                    <pre class="bg-gray-100 p-4 rounded overflow-auto max-h-96"></pre>
+                </div>
+            </div>
+
+            <!-- Логи -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">📝 Логи консоли</h2>
+                <button onclick="showConsoleLog()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    📄 Показать логи
+                </button>
+                <div id="consoleLog" class="mt-4 hidden">
+                    <pre class="bg-gray-100 p-4 rounded overflow-auto max-h-96"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация диагностики
+        document.addEventListener('DOMContentLoaded', function() {
+            // Базовый статус
+            document.getElementById('dataUrl').textContent = './data.json';
+            document.getElementById('onlineStatus').textContent = navigator.onLine ? '✅ Online' : '❌ Offline';
+            
+            // Проверка Service Worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(() => {
+                    document.getElementById('swStatus').textContent = '✅ Активен';
+                }).catch(() => {
+                    document.getElementById('swStatus').textContent = '❌ Неактивен';
+                });
+            } else {
+                document.getElementById('swStatus').textContent = '❌ Не поддерживается';
+            }
+        });
+
+        // Тест загрузки данных
+        async function testDataLoad() {
+            const resultDiv = document.getElementById('dataTestResult');
+            resultDiv.classList.remove('hidden');
+            
+            try {
+                console.log('🧪 Starting data load test...');
+                
+                const response = await fetch('./data.json', {
+                    cache: 'no-cache'
+                });
+                
+                const result = {
+                    status: response.status,
+                    statusText: response.statusText,
+                    url: response.url,
+                    ok: response.ok,
+                    headers: Object.fromEntries(response.headers.entries())
+                };
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    result.data = data;
+                    result.dataSummary = {
+                        totalItems: data.length,
+                        sampleItem: data[0] || 'No items'
+                    };
+                }
+                
+                resultDiv.innerHTML = `<pre class="bg-green-100 p-4 rounded">✅ УСПЕХ\n${JSON.stringify(result, null, 2)}</pre>`;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<pre class="bg-red-100 p-4 rounded">❌ ОШИБКА\n${error.toString()}\n\nStack: ${error.stack}</pre>`;
+            }
+        }
+
+        // Проверка кэша
+        async function checkCache() {
+            const cacheInfo = document.getElementById('cacheInfo');
+            cacheInfo.classList.remove('hidden');
+            
+            try {
+                const cacheData = localStorage.getItem('products_data');
+                const info = {
+                    hasCache: !!cacheData,
+                    cacheSize: cacheData ? new Blob([cacheData]).size : 0
+                };
+                
+                if (cacheData) {
+                    const parsed = JSON.parse(cacheData);
+                    info.timestamp = new Date(parsed.timestamp).toLocaleString();
+                    info.dataLength = parsed.data ? parsed.data.length : 0;
+                    info.sample = parsed.data ? parsed.data[0] : 'No data';
+                }
+                
+                cacheInfo.innerHTML = `<pre class="bg-green-100 p-4 rounded">${JSON.stringify(info, null, 2)}</pre>`;
+                
+            } catch (error) {
+                cacheInfo.innerHTML = `<pre class="bg-red-100 p-4 rounded">❌ ОШИБКА: ${error.toString()}</pre>`;
+            }
+        }
+
+        // Очистка кэша
+        function clearCache() {
+            localStorage.removeItem('products_data');
+            document.getElementById('cacheInfo').innerHTML = '<pre class="bg-yellow-100 p-4 rounded">🗑️ Кэш очищен</pre>';
+            document.getElementById('cacheInfo').classList.remove('hidden');
+        }
+
+        // Показать логи консоли (эмуляция)
+        function showConsoleLog() {
+            const consoleLog = document.getElementById('consoleLog');
+            consoleLog.classList.remove('hidden');
+            consoleLog.innerHTML = '<pre class="bg-blue-100 p-4 rounded">📝 Откройте DevTools (F12) для просмотра реальных логов консоли</pre>';
+        }
+    </script>
+</body>
+</html>

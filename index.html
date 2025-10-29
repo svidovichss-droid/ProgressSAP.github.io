@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор срока годности | ПРОГРЕСС АО</title>
+    <meta name="description" content="PWA приложение для расчета срока годности продукции с оффлайн-режимом">
+    <meta name="theme-color" content="#3498db">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="./manifest.json" crossorigin="use-credentials">
+    
+    <!-- Favicon & Icons -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📅</text></svg>">
+    
+    <!-- CSS & Frameworks -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" 
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
+          integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" 
+          crossorigin="anonymous" 
+          referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="./src/styles/styles.css">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Калькулятор срока">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- SEO & Social Meta -->
+    <meta property="og:title" content="Калькулятор срока годности">
+    <meta property="og:description" content="PWA приложение для расчета сроков годности продукции">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary">
+</head>
+<body class="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <!-- Header Component -->
+    <header class="header" role="banner">
+        <div class="container mx-auto px-4">
+            <div class="header-content">
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">
+                        <i class="fas fa-calculator mr-2" aria-hidden="true"></i>
+                        Калькулятор срока годности
+                    </h1>
+                    <p class="text-blue-100 text-sm md:text-base opacity-90 leading-relaxed">
+                        Рассчитайте дату окончания срока годности продукции с точностью до дня
+                    </p>
+                </div>
+                
+                <div class="logo flex-shrink-0 text-right ml-4">
+                    <div class="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent">
+                        ПРОГРЕСС
+                    </div>
+                    <div class="text-xs md:text-sm text-gray-300 mt-1">
+                        Акционерное Общество
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 w-full" role="main">
+        <div class="container mx-auto px-4 py-6 md:py-8">
+            <!-- Statistics Bar -->
+            <div class="stats-bar mb-6 grid grid-cols-1 md:grid-cols-3 gap-4" aria-live="polite">
+                <div class="stat-card bg-white rounded-lg p-4 shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                    <div class="flex items-center">
+                        <div class="stat-icon bg-blue-100 p-2 rounded-lg mr-3 dark:bg-blue-900">
+                            <i class="fas fa-boxes text-blue-600 text-lg dark:text-blue-300"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value text-2xl font-bold text-gray-800 dark:text-gray-200" id="productsCount">0</div>
+                            <div class="stat-label text-sm text-gray-600 dark:text-gray-400">Продуктов в базе</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card bg-white rounded-lg p-4 shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                    <div class="flex items-center">
+                        <div class="stat-icon bg-green-100 p-2 rounded-lg mr-3 dark:bg-green-900">
+                            <i class="fas fa-cloud text-green-600 text-lg dark:text-green-300"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value text-2xl font-bold text-gray-800 dark:text-gray-200" id="cacheStatus">Онлайн</div>
+                            <div class="stat-label text-sm text-gray-600 dark:text-gray-400">Статус данных</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card bg-white rounded-lg p-4 shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                    <div class="flex items-center">
+                        <div class="stat-icon bg-purple-100 p-2 rounded-lg mr-3 dark:bg-purple-900">
+                            <i class="fas fa-sync-alt text-purple-600 text-lg dark:text-purple-300"></i>
+                        </div>
+                        <div>
+                            <div class="stat-value text-2xl font-bold text-gray-800 dark:text-gray-200" id="lastUpdate">-</div>
+                            <div class="stat-label text-sm text-gray-600 dark:text-gray-400">Последнее обновление</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calculator Card -->
+            <div class="calculator-card bg-white rounded-xl shadow-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700 overflow-hidden">
+                <!-- Card Header -->
+                <div class="card-header bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                    <h2 class="text-xl font-bold text-white flex items-center">
+                        <i class="fas fa-calculator mr-3 text-blue-200" aria-hidden="true"></i>
+                        Расчет срока годности
+                    </h2>
+                </div>
+
+                <!-- Card Body -->
+                <div class="card-body p-6">
+                    <!-- System Status Indicators -->
+                    <div class="status-indicators space-y-3 mb-6">
+                        <!-- Data Loading Status -->
+                        <div id="dataStatus" class="status-message bg-blue-50 border border-blue-200 rounded-lg p-4 dark:bg-blue-900 dark:border-blue-700" role="alert">
+                            <div class="flex items-center">
+                                <div class="loading-spinner mr-3" aria-hidden="true"></div>
+                                <div>
+                                    <p class="text-blue-700 font-medium dark:text-blue-300">Загрузка данных о продуктах...</p>
+                                    <p class="text-blue-600 text-sm mt-1 dark:text-blue-400">Пожалуйста, подождите</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Offline Status -->
+                        <div id="offlineStatus" class="status-message bg-yellow-50 border border-yellow-200 rounded-lg p-4 dark:bg-yellow-900 dark:border-yellow-700 hidden" role="alert">
+                            <div class="flex items-center">
+                                <i class="fas fa-wifi-slash text-yellow-600 text-lg mr-3 dark:text-yellow-300" aria-hidden="true"></i>
+                                <div>
+                                    <p class="text-yellow-700 font-medium dark:text-yellow-300">Автономный режим</p>
+                                    <p class="text-yellow-600 text-sm mt-1 dark:text-yellow-400">Используются кэшированные данные</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search Section -->
+                    <section class="search-section mb-6" aria-labelledby="searchHeading">
+                        <h3 id="searchHeading" class="sr-only">Поиск продукта</h3>
+                        
+                        <div class="flex flex-col lg:flex-row gap-4 items-start">
+                            <!-- Search Input -->
+                            <div class="flex-1 w-full">
+                                <label for="productSearch" class="block text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300">
+                                    <i class="fas fa-search mr-2 text-blue-500" aria-hidden="true"></i>
+                                    Поиск продукта
+                                </label>
+                                <div class="relative">
+                                    <input
+                                        type="text"
+                                        id="productSearch"
+                                        placeholder="Введите код или название продукта..."
+                                        class="search-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:bg-gray-100 disabled:cursor-not-allowed dark:disabled:bg-gray-600"
+                                        aria-label="Поиск продукта по коду или названию"
+                                        aria-describedby="searchHelp"
+                                        disabled
+                                    >
+                                    <div id="searchHelp" class="text-xs text-gray-500 mt-1 dark:text-gray-400">
+                                        Начните вводить код или название для поиска
+                                    </div>
+                                    
+                                    <!-- Search Results Dropdown -->
+                                    <div id="searchResults" 
+                                         class="search-results absolute z-50 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl max-h-80 overflow-y-auto hidden"
+                                         role="listbox"
+                                         aria-labelledby="searchHeading">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Standard Notification Area -->
+                            <div id="standardNotificationContainer" class="w-full lg:w-80 lg:mt-8"></div>
+                        </div>
+                    </section>
+
+                    <!-- Product Information -->
+                    <section class="product-info mb-6" aria-labelledby="productInfoHeading">
+                        <h3 id="productInfoHeading" class="sr-only">Информация о продукте</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <!-- Product Code -->
+                            <div class="form-group">
+                                <label for="productCode" class="form-label dark:text-gray-300">
+                                    <i class="fas fa-barcode mr-2 text-blue-500" aria-hidden="true"></i>
+                                    Код продукции
+                                </label>
+                                <input
+                                    type="text"
+                                    id="productCode"
+                                    readonly
+                                    class="form-input readonly dark:bg-gray-600 dark:text-gray-200"
+                                    aria-readonly="true"
+                                >
+                            </div>
+
+                            <!-- Product Name -->
+                            <div class="form-group">
+                                <label for="productName" class="form-label dark:text-gray-300">
+                                    <i class="fas fa-tag mr-2 text-blue-500" aria-hidden="true"></i>
+                                    Наименование
+                                </label>
+                                <input
+                                    type="text"
+                                    id="productName"
+                                    readonly
+                                    class="form-input readonly dark:bg-gray-600 dark:text-gray-200"
+                                    aria-readonly="true"
+                                >
+                            </div>
+
+                            <!-- Shelf Life -->
+                            <div class="form-group">
+                                <label for="shelfLife" class="form-label dark:text-gray-300">
+                                    <i class="fas fa-calendar-day mr-2 text-blue-500" aria-hidden="true"></i>
+                                    Срок годности
+                                </label>
+                                <div class="relative">
+                                    <input
+                                        type="text"
+                                        id="shelfLife"
+                                        readonly
+                                        class="form-input readonly pr-12 dark:bg-gray-600 dark:text-gray-200"
+                                        aria-readonly="true"
+                                    >
+                                    <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm dark:text-gray-400">дней</span>
+                                </div>
+                            </div>
+
+                            <!-- Quantity Per Pack -->
+                            <div class="form-group">
+                                <label for="quantityPerPack" class="form-label dark:text-gray-300">
+                                    <i class="fas fa-boxes mr-2 text-blue-500" aria-hidden="true"></i>
+                                    Штук в упаковке
+                                </label>
+                                <input
+                                    type="number"
+                                    id="quantityPerPack"
+                                    min="1"
+                                    readonly
+                                    class="form-input readonly dark:bg-gray-600 dark:text-gray-200"
+                                    aria-readonly="true"
+                                >
+                            </div>
+
+                            <!-- Group Barcode -->
+                            <div class="form-group">
+                                <label for="groupBarcode" class="form-label dark:text-gray-300">
+                                    <i class="fas fa-qrcode mr-2 text-blue-500" aria-hidden="true"></i>
+                                    Штрихкод упаковки
+                                </label>
+                                <input
+                                    type="text"
+                                    id="groupBarcode"
+                                    readonly
+                                    class="form-input readonly dark:bg-gray-600 dark:text-gray-200"
+                                    aria-readonly="true"
+                                >
+                            </div>
+
+                            <!-- Manufacturer -->
+                            <div class="form-group">
+                                <label for="manufacturerBarcode" class="form-label dark:text-gray-300">
+                                    <i class="fas fa-industry mr-2 text-blue-500" aria-hidden="true"></i>
+                                    Производитель
+                                </label>
+                                <input
+                                    type="text"
+                                    id="manufacturerBarcode"
+                                    readonly
+                                    class="form-input readonly dark:bg-gray-600 dark:text-gray-200"
+                                    aria-readonly="true"
+                                >
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Production Date -->
+                    <section class="production-date mb-6" aria-labelledby="productionDateHeading">
+                        <h3 id="productionDateHeading" class="sr-only">Дата производства</h3>
+                        
+                        <div class="form-group max-w-md">
+                            <label for="productionDate" class="form-label dark:text-gray-300">
+                                <i class="fas fa-calendar-alt mr-2 text-blue-500" aria-hidden="true"></i>
+                                Дата производства
+                            </label>
+                            <input
+                                type="date"
+                                id="productionDate"
+                                class="form-input dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500"
+                                aria-label="Укажите дату производства продукции"
+                                aria-required="true"
+                            >
+                            <div class="date-helpers mt-2 flex gap-2">
+                                <button type="button" class="date-helper-btn text-xs px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded border border-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-200 dark:border-gray-500" data-days="-1">Вчера</button>
+                                <button type="button" class="date-helper-btn text-xs px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded border border-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-200 dark:border-gray-500" data-days="0">Сегодня</button>
+                                <button type="button" class="date-helper-btn text-xs px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded border border-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-200 dark:border-gray-500" data-days="1">Завтра</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Calculate Button -->
+                    <div class="calculate-section">
+                        <button
+                            id="calculateButton"
+                            class="calculate-btn w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                            aria-label="Рассчитать срок годности продукции"
+                            disabled
+                        >
+                            <i class="fas fa-calculator mr-2" aria-hidden="true"></i>
+                            Рассчитать срок годности
+                        </button>
+                    </div>
+
+                    <!-- Result Section -->
+                    <section class="result-section mt-6" aria-live="polite" aria-atomic="true">
+                        <div id="result" class="result-card hidden bg-blue-50 border border-blue-200 dark:bg-blue-900 dark:border-blue-700">
+                            <div class="flex items-center">
+                                <div class="result-icon bg-blue-100 p-3 rounded-lg mr-4 dark:bg-blue-800">
+                                    <i class="fas fa-calendar-check text-blue-600 text-xl dark:text-blue-300" aria-hidden="true"></i>
+                                </div>
+                                <div>
+                                    <p class="text-gray-700 text-sm font-medium dark:text-gray-300">
+                                        Дата окончания срока годности:
+                                    </p>
+                                    <p class="text-xl font-bold text-blue-800 dark:text-blue-200" id="expiryDate"></p>
+                                    <div class="result-meta mt-2 text-sm text-gray-600 dark:text-gray-400 hidden" id="resultMeta"></div>
+                                </div>
+                            </div>
+                            <div class="result-actions mt-3 flex gap-2 hidden" id="resultActions">
+                                <button class="action-btn copy-btn text-xs px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded border border-blue-300 dark:bg-blue-800 dark:hover:bg-blue-700 dark:text-blue-200 dark:border-blue-600" data-action="copy">
+                                    <i class="fas fa-copy mr-1"></i> Копировать
+                                </button>
+                                <button class="action-btn share-btn text-xs px-3 py-1 bg-green-100 hover:bg-green-200 text-green-700 rounded border border-green-300 dark:bg-green-800 dark:hover:bg-green-700 dark:text-green-200 dark:border-green-600" data-action="share">
+                                    <i class="fas fa-share mr-1"></i> Поделиться
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Last Update Info -->
+                    <div id="lastUpdateInfo" class="mt-6 text-center hidden">
+                        <div class="text-xs text-gray-500 inline-flex items-center bg-gray-100 px-3 py-1 rounded-full dark:bg-gray-700 dark:text-gray-400">
+                            <i class="fas fa-info-circle mr-1" aria-hidden="true"></i>
+                            Данные обновлены: <span id="lastUpdateTime" class="font-medium ml-1"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" role="contentinfo">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col items-center py-4">
+                <!-- Version & Copyright -->
+                <div class="text-center mb-4">
+                    <p class="text-gray-300 text-sm">
+                        © 2025 Калькулятор срока годности | Версия 3.0.0 PWA 
+                        <span class="mx-2">•</span>
+                        <i class="fas fa-heart text-red-400 mx-1" aria-hidden="true"></i>
+                        <i class="fas fa-code-branch text-blue-400 mx-1" aria-hidden="true"></i>
+                        <span class="ml-1">made in Quality service</span>
+                    </p>
+                </div>
+                
+                <!-- Action Links -->
+                <div class="flex items-center space-x-6 text-sm">
+                    <a href="mailto:asvidovich@progressfood.com" 
+                       class="footer-link group text-gray-300 hover:text-white transition-colors"
+                       aria-label="Отправить обратную связь по электронной почте">
+                        <i class="fas fa-envelope mr-2 group-hover:scale-110 transition-transform" aria-hidden="true"></i>
+                        Обратная связь
+                    </a>
+                    
+                    <span class="text-gray-600" aria-hidden="true">|</span>
+                    
+                    <button id="refreshFooterButton" 
+                            class="footer-link group text-gray-300 hover:text-white transition-colors refresh-btn"
+                            aria-label="Принудительно обновить данные о продуктах">
+                        <i class="fas fa-sync-alt mr-2 group-hover:rotate-180 transition-transform duration-500" aria-hidden="true"></i>
+                        Обновить данные
+                    </button>
+                    
+                    <span class="text-gray-600" aria-hidden="true">|</span>
+                    
+                    <button id="themeToggle" 
+                            class="footer-link group text-gray-300 hover:text-white transition-colors"
+                            aria-label="Переключить тему оформления">
+                        <i class="fas fa-moon mr-2 group-hover:scale-110 transition-transform" aria-hidden="true"></i>
+                        Тема
+                    </button>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2 max-w-sm" aria-live="assertive"></div>
+
+    <!-- Scripts -->
+    <script type="module" src="./src/js/app.js"></script>
+</body>
+</html>
