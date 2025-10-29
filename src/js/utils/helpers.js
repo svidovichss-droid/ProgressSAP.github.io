@@ -101,8 +101,9 @@ function escapeRegex(string) {
 export async function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     try {
-      const registration = await navigator.serviceWorker.register('./service-worker.js', {
-        scope: './'
+      // Регистрируем Service Worker из корня
+      const registration = await navigator.serviceWorker.register('/service-worker.js', {
+        scope: '/'
       });
       
       console.log('✅ Service Worker зарегистрирован:', registration);
@@ -118,10 +119,15 @@ export async function registerServiceWorker() {
         });
       });
       
+      return registration;
+      
     } catch (error) {
       console.error('❌ Ошибка регистрации Service Worker:', error);
+      // Не блокируем приложение при ошибке SW
+      return null;
     }
   }
+  return null;
 }
 
 /**
