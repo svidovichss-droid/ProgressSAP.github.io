@@ -16,24 +16,24 @@ export class ProductService {
    * Определение возможных источников данных
    */
   getDataSources() {
-    const baseUrl = window.location.origin + window.location.pathname;
-    const basePath = baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1);
+    const repoName = 'ProgressSAP.github.io';
+    const baseUrl = window.location.origin;
     
     return [
-      // 1. Относительный путь (для GitHub Pages и локального сервера)
+      // 1. Относительный путь (основной)
       './data.json',
       
-      // 2. Абсолютный путь от корня
-      '/data.json',
+      // 2. Для GitHub Pages структуры
+      `/${repoName}/data.json`,
       
-      // 3. Полный URL с учетом текущего расположения
-      `${basePath}data.json`,
+      // 3. Абсолютный путь
+      `${baseUrl}/${repoName}/data.json`,
       
-      // 4. Прямой URL для GitHub Pages
-      `${window.location.origin}/data.json`,
+      // 4. RAW GitHub URL
+      `https://raw.githubusercontent.com/svidovichss-droid/${repoName}/main/data.json`,
       
-      // 5. Резервный источник с GitHub RAW
-      'https://raw.githubusercontent.com/svidovichss-droid/ProgressSAP.github.io/refs/heads/main/data.json'
+      // 5. Fallback
+      `https://raw.githubusercontent.com/svidovichss-droid/${repoName}/refs/heads/main/data.json`
     ];
   }
 
@@ -116,11 +116,12 @@ export class ProductService {
     console.log(`📡 Запрос к: ${url}`);
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // Увеличил таймаут
     
     try {
       const response = await fetch(url, {
         signal: controller.signal,
+        mode: 'cors', // Добавил CORS mode
         cache: 'no-cache',
         headers: {
           'Cache-Control': 'no-cache',
@@ -134,7 +135,8 @@ export class ProductService {
         status: response.status,
         statusText: response.statusText,
         ok: response.ok,
-        type: response.type
+        type: response.type,
+        url: response.url
       });
       
       if (!response.ok) {
@@ -145,10 +147,15 @@ export class ProductService {
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         console.warn('⚠️ Неожиданный Content-Type:', contentType);
+        // Но продолжаем, так как некоторые серверы могут не отправлять правильный content-type
       }
       
       const text = await response.text();
       console.log('📄 Полученные данные (первые 500 символов):', text.substring(0, 500));
+      
+      if (!text.trim()) {
+        throw new Error('Пустой ответ от сервера');
+      }
       
       let productsData;
       try {
@@ -540,6 +547,7 @@ export class ProductService {
         const startTime = Date.now();
         const response = await fetch(url, { 
           signal: controller.signal,
+          mode: 'cors',
           cache: 'no-cache'
         });
         const endTime = Date.now();
