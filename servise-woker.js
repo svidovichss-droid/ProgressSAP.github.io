@@ -1,4 +1,5 @@
 const CACHE_NAME = 'progress-calculator-v3.1';
+const STATIC_CACHE = 'progress-static-v3.1';
 
 /**
  * Service Worker для PWA приложения
@@ -22,12 +23,12 @@ class CalculatorServiceWorker {
     
     // Предварительное кэширование критических ресурсов
     event.waitUntil(
-      caches.open(CACHE_NAME).then((cache) => {
+      caches.open(STATIC_CACHE).then((cache) => {
         return cache.addAll([
           './',
           './index.html',
-          './data.json',
-          './manifest.json'
+          './manifest.json',
+          './src/styles/styles.css'
         ]);
       })
     );
@@ -43,7 +44,7 @@ class CalculatorServiceWorker {
       caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
-            if (cacheName !== CACHE_NAME) {
+            if (cacheName !== CACHE_NAME && cacheName !== STATIC_CACHE) {
               console.log('🗑️ Удаление старого кэша:', cacheName);
               return caches.delete(cacheName);
             }
@@ -59,10 +60,13 @@ class CalculatorServiceWorker {
     const { request } = event;
     const url = new URL(request.url);
 
-    console.log('🌐 Service Worker fetch:', url.pathname);
+    // Пропускаем не-GET запросы
+    if (request.method !== 'GET') {
+      return;
+    }
 
     // Для data.json используем стратегию "Сначала сеть, потом кэш"
-    if (url.pathname.includes('data.json')) {
+    if (url.pathname.endsWith('data.json')) {
       event.respondWith(this.handleDataRequest(request));
       return;
     }
@@ -112,11 +116,10 @@ class CalculatorServiceWorker {
   }
 
   async handleStaticRequest(request) {
-    const cache = await caches.open(CACHE_NAME);
+    const cache = await caches.open(STATIC_CACHE);
     const cachedResponse = await cache.match(request);
     
     if (cachedResponse) {
-      console.log('💾 Service Worker: Статика из кэша');
       return cachedResponse;
     }
     
@@ -127,6 +130,10 @@ class CalculatorServiceWorker {
       }
       return networkResponse;
     } catch (error) {
+      // Fallback для главной страницы
+      if (request.url.includes('/ProgressSAP.github.io/') || request.url === self.location.origin + '/') {
+        return caches.match('./index.html');
+      }
       return new Response('Not found', { status: 404 });
     }
   }
@@ -164,4 +171,7 @@ class CalculatorServiceWorker {
   }
 }
 
-new CalculatorServiceWorker();
+// Инициализация только если поддерживается
+if ('serviceWorker' in navigator) {
+  new CalculatorServiceWorker();
+}
