@@ -151,26 +151,14 @@
                                     <i class="fas fa-search mr-2 text-blue-500" aria-hidden="true"></i>
                                     Поиск продукта
                                 </label>
-                                <div class="relative">
-                                    <input
-                                        type="text"
-                                        id="productSearch"
-                                        placeholder="Введите код или название продукта..."
-                                        class="search-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:bg-gray-100 disabled:cursor-not-allowed dark:disabled:bg-gray-600"
-                                        aria-label="Поиск продукта по коду или названию"
-                                        aria-describedby="searchHelp"
-                                        disabled
-                                    >
-                                    <div id="searchHelp" class="text-xs text-gray-500 mt-1 dark:text-gray-400">
-                                        Начните вводить код или название для поиска
-                                    </div>
-                                    
-                                    <!-- Search Results Dropdown -->
-                                    <div id="searchResults" 
-                                         class="search-results absolute z-50 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl max-h-80 overflow-y-auto hidden"
-                                         role="listbox"
-                                         aria-labelledby="searchHeading">
-                                    </div>
+                                
+                                <!-- Контейнер для компонента поиска -->
+                                <div id="productSearch">
+                                    <!-- SearchComponent вставит сюда свой DOM -->
+                                </div>
+                                
+                                <div id="searchHelp" class="text-xs text-gray-500 mt-1 dark:text-gray-400">
+                                    Начните вводить код или название для поиска
                                 </div>
                             </div>
 
@@ -183,100 +171,9 @@
                     <section class="product-info mb-6" aria-labelledby="productInfoHeading">
                         <h3 id="productInfoHeading" class="sr-only">Информация о продукте</h3>
                         
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <!-- Product Code -->
-                            <div class="form-group">
-                                <label for="productCode" class="form-label dark:text-gray-300">
-                                    <i class="fas fa-barcode mr-2 text-blue-500" aria-hidden="true"></i>
-                                    Код продукции
-                                </label>
-                                <input
-                                    type="text"
-                                    id="productCode"
-                                    readonly
-                                    class="form-input readonly dark:bg-gray-600 dark:text-gray-200"
-                                    aria-readonly="true"
-                                >
-                            </div>
-
-                            <!-- Product Name -->
-                            <div class="form-group">
-                                <label for="productName" class="form-label dark:text-gray-300">
-                                    <i class="fas fa-tag mr-2 text-blue-500" aria-hidden="true"></i>
-                                    Наименование
-                                </label>
-                                <input
-                                    type="text"
-                                    id="productName"
-                                    readonly
-                                    class="form-input readonly dark:bg-gray-600 dark:text-gray-200"
-                                    aria-readonly="true"
-                                >
-                            </div>
-
-                            <!-- Shelf Life -->
-                            <div class="form-group">
-                                <label for="shelfLife" class="form-label dark:text-gray-300">
-                                    <i class="fas fa-calendar-day mr-2 text-blue-500" aria-hidden="true"></i>
-                                    Срок годности
-                                </label>
-                                <div class="relative">
-                                    <input
-                                        type="text"
-                                        id="shelfLife"
-                                        readonly
-                                        class="form-input readonly pr-12 dark:bg-gray-600 dark:text-gray-200"
-                                        aria-readonly="true"
-                                    >
-                                    <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm dark:text-gray-400">дней</span>
-                                </div>
-                            </div>
-
-                            <!-- Quantity Per Pack -->
-                            <div class="form-group">
-                                <label for="quantityPerPack" class="form-label dark:text-gray-300">
-                                    <i class="fas fa-boxes mr-2 text-blue-500" aria-hidden="true"></i>
-                                    Штук в упаковке
-                                </label>
-                                <input
-                                    type="number"
-                                    id="quantityPerPack"
-                                    min="1"
-                                    readonly
-                                    class="form-input readonly dark:bg-gray-600 dark:text-gray-200"
-                                    aria-readonly="true"
-                                >
-                            </div>
-
-                            <!-- Group Barcode -->
-                            <div class="form-group">
-                                <label for="groupBarcode" class="form-label dark:text-gray-300">
-                                    <i class="fas fa-qrcode mr-2 text-blue-500" aria-hidden="true"></i>
-                                    Штрихкод упаковки
-                                </label>
-                                <input
-                                    type="text"
-                                    id="groupBarcode"
-                                    readonly
-                                    class="form-input readonly dark:bg-gray-600 dark:text-gray-200"
-                                    aria-readonly="true"
-                                >
-                            </div>
-
-                            <!-- Manufacturer -->
-                            <div class="form-group">
-                                <label for="manufacturerBarcode" class="form-label dark:text-gray-300">
-                                    <i class="fas fa-industry mr-2 text-blue-500" aria-hidden="true"></i>
-                                    Производитель
-                                </label>
-                                <input
-                                    type="text"
-                                    id="manufacturerBarcode"
-                                    readonly
-                                    class="form-input readonly dark:bg-gray-600 dark:text-gray-200"
-                                    aria-readonly="true"
-                                >
-                            </div>
+                        <!-- Контейнер для компонента калькулятора -->
+                        <div id="calculatorFields">
+                            <!-- CalculatorComponent вставит сюда свой DOM -->
                         </div>
                     </section>
 
@@ -362,7 +259,7 @@
                 <!-- Version & Copyright -->
                 <div class="text-center mb-4">
                     <p class="text-gray-300 text-sm">
-                        © 2025 Калькулятор срока годности | Версия 3.0.0 PWA 
+                        © 2025 Калькулятор срока годности | Версия 3.1.0 PWA 
                         <span class="mx-2">•</span>
                         <i class="fas fa-heart text-red-400 mx-1" aria-hidden="true"></i>
                         <i class="fas fa-code-branch text-blue-400 mx-1" aria-hidden="true"></i>
