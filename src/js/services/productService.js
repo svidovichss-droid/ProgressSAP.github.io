@@ -33,7 +33,7 @@ export class ProductService {
       `${window.location.origin}/data.json`,
       
       // 5. Резервный источник с GitHub RAW
-      'https://raw.githubusercontent.com/svidovichss-droid/ProgressSAP.github.io/main/data.json'
+      'https://raw.githubusercontent.com/svidovichss-droid/ProgressSAP.github.io/refs/heads/main/data.json'
     ];
   }
 
