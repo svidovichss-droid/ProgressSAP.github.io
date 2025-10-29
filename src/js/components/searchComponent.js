@@ -1,4 +1,4 @@
-import { productService } from '../services/productService.js';
+import { ProductService } from '../services/productService.js';
 import { debounce, highlightText } from '../utils/helpers.js';
 
 /**
@@ -21,6 +21,9 @@ export class SearchComponent {
       selectedIndex: -1
     };
     
+    // Используем глобальный экземпляр или создаем новый
+    this.productService = window.productService || new ProductService();
+    
     this.init();
   }
 
@@ -38,7 +41,7 @@ export class SearchComponent {
    */
   createDOM() {
     this.elements.container = document.createElement('div');
-    this.elements.container.className = 'search-component';
+    this.elements.container.className = 'search-component relative';
     
     const existingInput = document.getElementById('productSearch');
     if (existingInput && existingInput.parentNode) {
@@ -47,13 +50,16 @@ export class SearchComponent {
     
     this.elements.input = document.createElement('input');
     this.elements.input.type = 'text';
+    this.elements.input.id = 'productSearch';
     this.elements.input.placeholder = 'Введите код или название продукта...';
-    this.elements.input.className = 'search-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white';
+    this.elements.input.className = 'search-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed';
     this.elements.input.setAttribute('aria-label', 'Поиск продукта');
+    this.elements.input.setAttribute('autocomplete', 'off');
     
     this.elements.results = document.createElement('div');
     this.elements.results.className = 'search-results absolute z-50 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl max-h-80 overflow-y-auto hidden';
     this.elements.results.setAttribute('role', 'listbox');
+    this.elements.results.setAttribute('aria-labelledby', 'searchHeading');
     
     this.elements.container.appendChild(this.elements.input);
     this.elements.container.appendChild(this.elements.results);
@@ -90,8 +96,11 @@ export class SearchComponent {
     
     try {
       this.showLoading();
-      const results = await productService.searchProducts(query);
+      
+      // Используем productService для поиска
+      const results = this.productService.searchProducts(query);
       this.displayResults(results.slice(0, this.options.maxResults));
+      
     } catch (error) {
       console.error('❌ Search error:', error);
       this.showError('Ошибка поиска');
@@ -126,7 +135,7 @@ export class SearchComponent {
    */
   createResultElement(product, index) {
     const element = document.createElement('div');
-    element.className = 'search-result-item p-3 hover:bg-blue-50 cursor-pointer flex items-center border-b border-gray-100 dark:border-gray-600 dark:hover:bg-blue-900 last:border-0';
+    element.className = 'search-result-item p-3 hover:bg-blue-50 cursor-pointer flex items-center border-b border-gray-100 dark:border-gray-600 dark:hover:bg-blue-900 last:border-0 transition-colors duration-200';
     element.setAttribute('role', 'option');
     element.setAttribute('data-index', index);
     element.setAttribute('data-code', product.code);
@@ -135,12 +144,15 @@ export class SearchComponent {
     const highlightedCode = highlightText(product.code, this.state.query);
     
     element.innerHTML = `
-      <div class="bg-blue-100 p-2 rounded-lg mr-3 dark:bg-blue-800">
-        <i class="fas fa-box text-blue-600 dark:text-blue-300"></i>
+      <div class="bg-blue-100 p-2 rounded-lg mr-3 dark:bg-blue-800 flex-shrink-0">
+        <i class="fas fa-box text-blue-600 dark:text-blue-300 text-sm"></i>
       </div>
-      <div>
-        <div class="font-medium text-blue-800 dark:text-blue-200">${highlightedName}</div>
-        <div class="text-sm text-gray-500 dark:text-gray-400">Код: <span class="product-code">${highlightedCode}</span> | Срок: <span class="shelf-life">${product.shelfLife} дней</span></div>
+      <div class="flex-1 min-w-0">
+        <div class="font-medium text-blue-800 dark:text-blue-200 text-sm truncate">${highlightedName}</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          Код: <span class="font-mono product-code">${highlightedCode}</span> | 
+          Срок: <span class="shelf-life font-medium">${product.shelfLife} дней</span>
+        </div>
       </div>
     `;
     
@@ -165,13 +177,17 @@ export class SearchComponent {
     if (this.options.onProductSelect) {
       this.options.onProductSelect(product);
     }
+    
+    // Фокус обратно на поле ввода
+    this.elements.input.focus();
   }
 
   /**
    * Установка выбранного индекса
    */
   setSelectedIndex(index) {
-    const previousSelected = this.elements.results.querySelector('.bg-blue-100');
+    // Убираем выделение с предыдущего элемента
+    const previousSelected = this.elements.results.querySelector('.bg-blue-100, .dark\\:bg-blue-900');
     if (previousSelected) {
       previousSelected.classList.remove('bg-blue-100', 'dark:bg-blue-900');
     }
@@ -182,6 +198,9 @@ export class SearchComponent {
       const newSelected = this.elements.results.querySelector(`[data-index="${index}"]`);
       if (newSelected) {
         newSelected.classList.add('bg-blue-100', 'dark:bg-blue-900');
+        
+        // Прокрутка к выбранному элементу
+        newSelected.scrollIntoView({ block: 'nearest' });
       }
     }
   }
@@ -210,6 +229,10 @@ export class SearchComponent {
         
       case 'Escape':
         event.preventDefault();
+        this.clearResults();
+        break;
+        
+      case 'Tab':
         this.clearResults();
         break;
     }
@@ -244,7 +267,7 @@ export class SearchComponent {
    * Обработчик фокуса
    */
   handleFocus() {
-    if (this.state.results.length > 0) {
+    if (this.state.results.length > 0 && this.state.query.length >= this.options.minQueryLength) {
       this.elements.results.classList.remove('hidden');
       this.state.isOpen = true;
     }
@@ -254,9 +277,10 @@ export class SearchComponent {
    * Обработчик потери фокуса
    */
   handleBlur() {
+    // Небольшая задержка для обработки клика по результатам
     setTimeout(() => {
       this.state.isOpen = false;
-    }, 150);
+    }, 200);
   }
 
   /**
@@ -273,12 +297,13 @@ export class SearchComponent {
    */
   showLoading() {
     this.elements.results.innerHTML = `
-      <div class="p-3 text-center text-gray-500 dark:text-gray-400">
-        <div class="loading-spinner inline-block mr-2"></div>
-        Поиск...
+      <div class="p-4 text-center text-gray-500 dark:text-gray-400">
+        <div class="loading-spinner inline-block w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full mr-2 animate-spin"></div>
+        <span class="text-sm">Поиск...</span>
       </div>
     `;
     this.elements.results.classList.remove('hidden');
+    this.state.isOpen = true;
   }
 
   /**
@@ -286,8 +311,10 @@ export class SearchComponent {
    */
   showNoResults() {
     this.elements.results.innerHTML = `
-      <div class="p-3 text-gray-500 text-center dark:text-gray-400">
-        Ничего не найдено
+      <div class="p-4 text-gray-500 text-center dark:text-gray-400">
+        <i class="fas fa-search mr-2"></i>
+        <span class="text-sm">Ничего не найдено</span>
+        <div class="text-xs mt-1 text-gray-400 dark:text-gray-500">Попробуйте изменить запрос</div>
       </div>
     `;
     this.elements.results.classList.remove('hidden');
@@ -299,9 +326,9 @@ export class SearchComponent {
    */
   showError(message) {
     this.elements.results.innerHTML = `
-      <div class="p-3 text-red-500 text-center dark:text-red-400">
+      <div class="p-4 text-red-500 text-center dark:text-red-400">
         <i class="fas fa-exclamation-triangle mr-2"></i>
-        ${message}
+        <span class="text-sm">${message}</span>
       </div>
     `;
     this.elements.results.classList.remove('hidden');
@@ -339,5 +366,17 @@ export class SearchComponent {
   clear() {
     this.elements.input.value = '';
     this.clearResults();
+  }
+
+  /**
+   * Включить/выключить поле поиска
+   */
+  setEnabled(enabled) {
+    this.elements.input.disabled = !enabled;
+    if (enabled) {
+      this.elements.input.placeholder = 'Введите код или название продукта...';
+    } else {
+      this.elements.input.placeholder = 'Загрузка данных...';
+    }
   }
 }
